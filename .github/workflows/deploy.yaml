@@ -9,52 +9,50 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 📥 Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: 🐍 Set up Python
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.13
+          python-version: 3.10  # use 3.10 instead of 3.13 for stability
 
-      - name: 📦 Install Python Dependencies
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: 🧪 Run Unit Tests
+      - name: Run unit tests
         run: |
           echo "No unit tests defined yet"
-          # Add: pytest or unittest here when ready
 
-      - name: 🔐 Log in to Docker Hub
+      - name: Log in to Docker Hub
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         run: |
           echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
 
-      - name: 🐳 Build and Push Docker Image
+      - name: Build and push Docker image
         env:
-          IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/online-doctor-app:latest
+          IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/online-doctor-app
         run: |
           docker build -t $IMAGE_NAME .
           docker push $IMAGE_NAME
 
-      - name: ☁️ Authenticate with Google Cloud
+      - name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GKE_SA_KEY }}
 
-      - name: 📡 Get GKE Credentials
+      - name: Get GKE credentials
         uses: google-github-actions/get-gke-credentials@v2
         with:
-          cluster_name: online-doctor-cluster
-          location: asia-south1
+          cluster_name: doctor-cluster
+          location: us-central1-a
           project_id: ${{ secrets.GCP_PROJECT_ID }}
 
-      - name: 🚀 Deploy to GKE
+      - name: Deploy to GKE
         run: |
           kubectl apply -f k8s/deployment.yaml
           kubectl apply -f k8s/service.yaml
-          kubectl rollout status deployment/online-doctor-deployment
