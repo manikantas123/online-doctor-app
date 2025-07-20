@@ -1,17 +1,17 @@
-name: Flask CI/CD
+name: CI/CD for Online Doctor App
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v3
 
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -23,6 +23,8 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Run tests
+    - name: Run Flask app test
       run: |
-        echo "No tests yet, build succeeded."
+        python app.py &
+        sleep 5
+        curl http://localhost:8000

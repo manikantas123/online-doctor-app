@@ -1,12 +1,13 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: doctor-app-service
+  name: doctor-service
+  namespace: doctor-app
 spec:
   selector:
-    app: doctor-app
+    app: doctor
   ports:
     - protocol: TCP
       port: 80
-      targetPort: 8080
+      targetPort: 8000
   type: LoadBalancer

@@ -1,19 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: doctor-app-deployment
+  name: doctor-deployment
+  namespace: doctor-app
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: doctor-app
+      app: doctor
   template:
     metadata:
       labels:
-        app: doctor-app
+        app: doctor
     spec:
       containers:
-      - name: doctor-app
-        image: gcr.io/YOUR_PROJECT_ID/online-doctor-app:latest
+      - name: doctor-container
+        image: manikantas123/online-doctor-app:v1
         ports:
-        - containerPort: 8080
+        - containerPort: 8000
