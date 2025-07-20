@@ -23,7 +23,8 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run unit tests
-        run: echo "No unit tests defined yet"
+        run: |
+          echo "No unit tests defined yet"
 
       - name: Log in to Docker Hub
         env:
@@ -39,16 +40,16 @@ jobs:
           docker build -t $IMAGE_NAME .
           docker push $IMAGE_NAME
 
-      - name: Authenticate to Google Cloud
+      - name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
+          credentials_json: ${{ secrets.GKE_SA_KEY }}
 
-      - name: Set up GKE credentials
+      - name: Get GKE credentials
         uses: google-github-actions/get-gke-credentials@v2
         with:
-          cluster_name: ${{ secrets.GKE_CLUSTER_NAME }}
-          location: ${{ secrets.GKE_ZONE }}
+          cluster_name: online-doctor-cluster
+          location: asia-south1
           project_id: ${{ secrets.GCP_PROJECT_ID }}
 
       - name: Deploy to GKE
