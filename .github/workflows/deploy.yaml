@@ -1,21 +1,21 @@
-name: CI/CD Pipeline for Doctor App
+name: CI/CD for Online Doctor App with GKE
 
 on:
   push:
     branches: [main]
 
 jobs:
-  build-and-deploy:
+  build-deploy-gke:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Python 3.10
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.13
+          python-version: 3.10
 
       - name: Install dependencies
         run: |
@@ -24,26 +24,41 @@ jobs:
 
       - name: Run unit tests
         run: |
-          echo "No unit tests yet"
+          echo "No unit tests defined yet"
 
-      - name: Build & Push Docker Image to Artifact Registry
+      - name: Log in to Docker Hub
         env:
-          PROJECT_ID: ${{ secrets.GCP_PROJECT }}
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         run: |
-          image_name=us-central1-docker.pkg.dev/$praxis-gasket-465908-h5/doctor-app/doctor-app
+          echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+
+      - name: Build and push Docker image
+        env:
+          IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/online-doctor-app
+        run: |
           docker build -t $IMAGE_NAME .
-          echo ${{ secrets.GCP_SA_KEY }} | docker login -u _json_key --password-stdin https://us-central1-docker.pkg.dev
           docker push $IMAGE_NAME
 
-      - name: Start Flask app in background
+      - name: Set up GCP authentication
         run: |
-          python app.py &
-          sleep 5
+          echo "${{ secrets.GKE_SA_KEY }}" | base64 -d > ${{ runner.temp }}/gke-key.json
+        env:
+          GKE_SA_KEY: ${{ secrets.GKE_SA_KEY }}
 
-      - name: Health check
-        run: |
-          curl --fail http://127.0.0.1:5000 || exit 1
+      - name: Authenticate with GCP
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GKE_SA_KEY }}
 
-      - name: Stop Flask app
+      - name: Set up kubectl
+        uses: google-github-actions/get-gke-credentials@v2
+        with:
+          cluster_name: ${{ secrets.GKE_CLUSTER }}
+          location: ${{ secrets.GKE_ZONE }}
+          project_id: ${{ secrets.GCP_PROJECT }}
+
+      - name: Deploy to GKE
         run: |
-          pkill -f app.py
+          kubectl apply -f k8s/deployment.yaml
+          kubectl apply -f k8s/service.yaml
