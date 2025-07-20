@@ -6,41 +6,60 @@ on:
       - main
 
 jobs:
-  build-and-deploy:
+  build-deploy:
     runs-on: ubuntu-latest
 
-    env:
-      PROJECT_ID: praxis-gasket-465908-h5
-      REGION: us-central1
-      CLUSTER_NAME: doctor-cluster
-      IMAGE_NAME: doctor-app
-      DEPLOYMENT_NAME: doctor-deployment
-      CONTAINER_PORT: 8000
-
     steps:
-    - name: Checkout code
+    - name: 📥 Checkout code
       uses: actions/checkout@v3
 
-    - name: Set up Google Cloud SDK
-      uses: google-github-actions/setup-gcloud@v1
+    - name: 🐍 Set up Python
+      uses: actions/setup-python@v4
       with:
-        project_id: ${{ env.PROJECT_ID }}
-        service_account_key: ${{ secrets.GCP_SA_KEY }}
-        export_default_credentials: true
+        python-version: '3.10'
 
-    - name: Configure Docker for GCR
-      run: gcloud auth configure-docker
-
-    - name: Build Docker image
-      run: docker build -t gcr.io/${{ env.PROJECT_ID }}/${{ env.IMAGE_NAME }}:latest .
-
-    - name: Push Docker image to GCR
-      run: docker push gcr.io/${{ env.PROJECT_ID }}/${{ env.IMAGE_NAME }}:latest
-
-    - name: Get GKE credentials
-      run: gcloud container clusters get-credentials ${{ env.CLUSTER_NAME }} --region ${{ env.REGION }}
-
-    - name: Deploy to GKE
+    - name: 📦 Install dependencies
       run: |
-        kubectl set image deployment/${{ env.DEPLOYMENT_NAME }} ${{ env.IMAGE_NAME }}=gcr.io/${{ env.PROJECT_ID }}/${{ env.IMAGE_NAME }}:latest
-        kubectl rollout status deployment/${{ env.DEPLOYMENT_NAME }}
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: 🚦 Run Flask app test
+      run: |
+        python app.py &
+        sleep 5
+        curl --fail http://localhost:8000 || exit 1
+
+    - name: 🔐 Authenticate with Google Cloud
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: '${{ secrets.GCP_SA_KEY }}'
+
+    - name: 🔧 Set up Google Cloud SDK
+      uses: google-github-actions/setup-gcloud@v2
+      with:
+        project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+    - name: 🐳 Build and Push Docker image to GCR
+      run: |
+        IMAGE=gcr.io/${{ secrets.GCP_PROJECT_ID }}/doctor-app:${{ github.sha }}
+        docker build -t $IMAGE .
+        echo $IMAGE > image-url.txt
+        gcloud auth configure-docker --quiet
+        docker push $IMAGE
+
+    - name: 📂 Set up kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'latest'
+
+    - name: ☁️ Get GKE credentials
+      run: |
+        gcloud container clusters get-credentials ${{ secrets.GKE_CLUSTER_NAME }} \
+          --zone ${{ secrets.GCP_ZONE }} \
+          --project ${{ secrets.GCP_PROJECT_ID }}
+
+    - name: 🚀 Deploy to GKE
+      run: |
+        IMAGE=$(cat image-url.txt)
+        kubectl set image deployment/doctor-deployment doctor-container=$IMAGE
+        kubectl rollout status deployment/doctor-deployment
