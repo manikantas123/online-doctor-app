@@ -30,7 +30,7 @@ jobs:
         env:
           PROJECT_ID: ${{ secrets.GCP_PROJECT }}
         run: |
-          IMAGE_NAME=us-central1-docker.pkg.dev/$praxis-gasket-465908-h5/doctor-app/doctor-app
+          image_name=us-central1-docker.pkg.dev/$praxis-gasket-465908-h5/doctor-app/doctor-app
           docker build -t $IMAGE_NAME .
           echo ${{ secrets.GCP_SA_KEY }} | docker login -u _json_key --password-stdin https://us-central1-docker.pkg.dev
           docker push $IMAGE_NAME
