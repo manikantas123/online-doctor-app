@@ -16,11 +16,10 @@ jobs:
       - name: ✅ Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Python 3.10
+      - name: ✅ Set up Python 3.10
         uses: actions/setup-python@v4
         with:
-          python-version: 3.10
-
+          python-version: '3.10'
 
       - name: ✅ Install dependencies
         run: |
@@ -35,7 +34,7 @@ jobs:
 
       - name: ✅ Health check with curl
         run: |
-          curl --fail http://localhost:8000 || (echo "Health check failed" && exit 1)
+          curl --fail http://127.0.0.1:8000 || (echo "❌ Health check failed" && exit 1)
 
       - name: ✅ Stop Flask app
         run: |
