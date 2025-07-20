@@ -15,6 +15,6 @@ spec:
     spec:
       containers:
       - name: doctor-container
-        image: manikantas123/online-doctor-app:v1
+        image: manikanta455/online-doctor-app:v1
         ports:
         - containerPort: 8000

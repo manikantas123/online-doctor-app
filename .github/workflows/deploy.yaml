@@ -1,0 +1,46 @@
+name: CI/CD for Online Doctor App
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      PROJECT_ID: praxis-gasket-465908-h5
+      REGION: us-central1
+      CLUSTER_NAME: doctor-cluster
+      IMAGE_NAME: doctor-app
+      DEPLOYMENT_NAME: doctor-deployment
+      CONTAINER_PORT: 8000
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Google Cloud SDK
+      uses: google-github-actions/setup-gcloud@v1
+      with:
+        project_id: ${{ env.PROJECT_ID }}
+        service_account_key: ${{ secrets.GCP_SA_KEY }}
+        export_default_credentials: true
+
+    - name: Configure Docker for GCR
+      run: gcloud auth configure-docker
+
+    - name: Build Docker image
+      run: docker build -t gcr.io/${{ env.PROJECT_ID }}/${{ env.IMAGE_NAME }}:latest .
+
+    - name: Push Docker image to GCR
+      run: docker push gcr.io/${{ env.PROJECT_ID }}/${{ env.IMAGE_NAME }}:latest
+
+    - name: Get GKE credentials
+      run: gcloud container clusters get-credentials ${{ env.CLUSTER_NAME }} --region ${{ env.REGION }}
+
+    - name: Deploy to GKE
+      run: |
+        kubectl set image deployment/${{ env.DEPLOYMENT_NAME }} ${{ env.IMAGE_NAME }}=gcr.io/${{ env.PROJECT_ID }}/${{ env.IMAGE_NAME }}:latest
+        kubectl rollout status deployment/${{ env.DEPLOYMENT_NAME }}
