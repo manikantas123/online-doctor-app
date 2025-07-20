@@ -41,7 +41,7 @@ jobs:
 
     - name: 🐳 Build and Push Docker image to GCR
       run: |
-        IMAGE=gcr.io/${{ secrets.GCP_PROJECT_ID }}/doctor-app:${{ github.sha }}
+        IMAGE_NAME: us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/doctor-app/doctor-app
         docker build -t $IMAGE .
         echo $IMAGE > image-url.txt
         gcloud auth configure-docker --quiet
