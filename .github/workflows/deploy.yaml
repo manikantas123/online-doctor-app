@@ -40,23 +40,17 @@ jobs:
           docker build -t $IMAGE_NAME .
           docker push $IMAGE_NAME
 
-      - name: Set up GCP authentication
-        run: |
-          echo "${{ secrets.GKE_SA_KEY }}" | base64 -d > ${{ runner.temp }}/gke-key.json
-        env:
-          GKE_SA_KEY: ${{ secrets.GKE_SA_KEY }}
-
       - name: Authenticate with GCP
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ secrets.GKE_SA_KEY }}
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
 
       - name: Set up kubectl
         uses: google-github-actions/get-gke-credentials@v2
         with:
-          cluster_name: ${{ secrets.GKE_CLUSTER }}
+          cluster_name: ${{ secrets.GKE_CLUSTER_NAME }}
           location: ${{ secrets.GKE_ZONE }}
-          project_id: ${{ secrets.GCP_PROJECT }}
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
 
       - name: Deploy to GKE
         run: |
