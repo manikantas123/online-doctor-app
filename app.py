@@ -1,47 +1,24 @@
-from flask import Flask, render_template_string, request, redirect, url_for, jsonify
-import redis
-import time
+from flask import Flask, render_template_string, request, jsonify
 
 app = Flask(__name__)
 
-# Redis client
-r = redis.Redis(host='localhost', port=6379, decode_responses=True)
-
-# Simple in-memory doctor list (can be from DB in future)
-doctors = [
-    {"id": 1, "name": "Dr. Anjali Mehta", "specialty": "Cardiologist"},
-    {"id": 2, "name": "Dr. Rakesh Sharma", "specialty": "Dermatologist"},
-    {"id": 3, "name": "Dr. Nandini Rao", "specialty": "Psychiatrist"}
-]
-
-@app.route("/")
+@app.route('/')
 def home():
-    return render_template_string(open("templates.html").read(), doctors=doctors)
+    return render_template_string(\"\"\"
+        <h1>Online Doctor Consultation</h1>
+        <form action='/consult' method='post'>
+            <input name='name' placeholder='Your Name' required>
+            <input name='symptom' placeholder='Your Symptoms' required>
+            <button type='submit'>Consult Now</button>
+        </form>
+    \"\"\")
 
-@app.route("/consult", methods=["POST"])
+@app.route('/consult', methods=['POST'])
 def consult():
-    name = request.form["name"]
-    age = request.form["age"]
-    doctor_id = request.form["doctor"]
-    issue = request.form["issue"]
-    timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+    name = request.form['name']
+    symptom = request.form['symptom']
+    advice = f"Hi {name}, based on your symptoms ({symptom}), please consult a doctor if it persists."
+    return jsonify({"message": advice})
 
-    consultation = {
-        "name": name,
-        "age": age,
-        "doctor_id": doctor_id,
-        "issue": issue,
-        "timestamp": timestamp
-    }
-
-    # Save in Redis
-    r.lpush("consultations", str(consultation))
-    return redirect(url_for("home"))
-
-@app.route("/api/consultations")
-def get_consultations():
-    data = r.lrange("consultations", 0, 10)
-    return jsonify(data)
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=8080)

@@ -13,23 +13,7 @@ spec:
         app: doctor-app
     spec:
       containers:
-        - name: doctor-app
-          image: gcr.io/YOUR_PROJECT_ID/doctor-app:latest
-          ports:
-            - containerPort: 5000
-          env:
-            - name: REDIS_HOST
-              value: "redis-service"
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: doctor-app-service
-spec:
-  selector:
-    app: doctor-app
-  type: LoadBalancer
-  ports:
-    - protocol: TCP
-      port: 80
-      targetPort: 5000
+      - name: doctor-app
+        image: gcr.io/YOUR_PROJECT_ID/online-doctor-app:latest
+        ports:
+        - containerPort: 8080
